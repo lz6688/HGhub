@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { readFileSync } from "node:fs";
+import { legacyCss } from "./scripts/legacy-css";
 
 const host = process.env.TAURI_DEV_HOST;
 const { version } = JSON.parse(
@@ -9,11 +10,14 @@ const { version } = JSON.parse(
 ) as { version: string };
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss({ optimize: false }), legacyCss()],
   clearScreen: false,
   // 版本号只维护 package.json（CI 会按 tag 改写它），界面里的版本由这里注入，避免写死后漂移
   define: {
     __APP_VERSION__: JSON.stringify(version),
+  },
+  worker: {
+    format: "iife",
   },
   server: {
     port: 1420,
@@ -24,7 +28,10 @@ export default defineConfig({
   },
   envPrefix: ["VITE_", "TAURI_ENV_*"],
   build: {
-    target: "es2021",
+    target: ["chrome66", "safari14.1"],
+    cssTarget: ["chrome66", "safari13"],
+    cssCodeSplit: false,
+    cssMinify: false,
     minify: "esbuild",
     sourcemap: false,
   },

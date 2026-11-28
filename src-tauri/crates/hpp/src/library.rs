@@ -193,6 +193,25 @@ impl Library {
                 }
                 Value::Null
             }
+            "history.remove" => {
+                let items = p["items"].as_array()
+                    .ok_or_else(|| PluginError::invalid("items 必须为作品数组"))?;
+                if items.is_empty() || items.len() > 500 {
+                    return Err(PluginError::invalid("一次选择 1–500 部作品"));
+                }
+                let selected = items.iter().map(|item| {
+                    Ok(key(&[ident(item, "pluginId")?, ident(item, "mediaId")?]))
+                }).collect::<Result<BTreeSet<_>>>()?;
+                data.progress.retain(|_, progress| {
+                    !selected.contains(&key(&[progress["pluginId"].as_str().unwrap(), progress["mediaId"].as_str().unwrap()]))
+                });
+                for k in selected {
+                    if let Some(entry) = data.entries.get_mut(&k) {
+                        entry.as_object_mut().unwrap().remove("lastProgress");
+                    }
+                }
+                Value::Null
+            }
             _ => return Err(PluginError::new("UNSUPPORTED", "未知片库操作")),
         };
         if !matches!(action, "list" | "get" | "progress.get" | "sources.get") {

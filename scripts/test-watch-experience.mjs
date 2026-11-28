@@ -25,7 +25,7 @@ export async function testWatchExperience({ page, browser, dispatch, base, ui, r
   const shot = (p, name) => p.screenshot({ animations: "disabled", path: join(output, name + ".png") });
   const button = (p, name) => p.getByRole("button", { name, exact: true });
   const details = p => p.getByRole("dialog", { name: "作品详情" });
-  const start = async p => { await details(p).locator(".hg-watch-action").click(); await p.locator(".mode-full").waitFor(); await p.waitForFunction(() => document.querySelector("video") && !document.querySelector("video").paused); };
+  const start = async p => { await details(p).locator(".hg-watch-action").click(); await p.locator(".mode-full").waitFor(); await p.waitForFunction(() => document.querySelector(".mode-full video") && !document.querySelector(".mode-full video").paused); };
   assert.equal(await page.locator(".desktop-controls").count(), 0, "preview has no full controller");
   const canvas = await page.locator(".win-main").boundingBox();
   for (const selector of [".hg-preview-footer", ".hg-preview-actions", ".hg-preview-heading"]) {
@@ -86,7 +86,8 @@ export async function testWatchExperience({ page, browser, dispatch, base, ui, r
   await page.getByRole("navigation", { name: "主导航" }).getByRole("button", { name: "分类", exact: true }).click();
   await page.locator(".legacy-row-card").first().click();
   await details(page).waitFor();
-  assert.equal(await page.locator("video").count(), 0, "category opens details without autoplay");
+  assert.equal(await page.locator("video:visible").count(), 0, "category opens details without autoplay");
+  assert(await page.locator(".mode-preview video").evaluate(v => v.paused), "retained homepage video pauses while browsing");
   assert(await page.locator(".hpp-category-preview").count() > 0, "origin remains mounted behind detail");
   await start(page);
   await button(page, "返回").click();
@@ -96,19 +97,19 @@ export async function testWatchExperience({ page, browser, dispatch, base, ui, r
   await page.getByRole("textbox", { name: "搜索所有插件" }).press("Enter");
   await page.locator(".legacy-search-poster").first().click();
   await details(page).waitFor();
-  assert.equal(await page.locator("video").count(), 0, "search opens details without autoplay");
+  assert.equal(await page.locator("video:visible").count(), 0, "search opens details without autoplay");
   await button(details(page), "本地收藏").click();
   await button(details(page), "取消本地收藏").waitFor();
   await button(details(page), "关闭详情").click();
   await page.getByRole("navigation", { name: "主导航" }).locator(".win-account").click();
   await button(page, "查看作品").first().click();
   await details(page).waitFor();
-  assert.equal(await page.locator("video").count(), 0, "favorites opens details");
+  assert.equal(await page.locator("video:visible").count(), 0, "favorites opens details");
   await button(details(page), "关闭详情").click();
-  await button(page, "历史").click();
+  await page.getByRole("navigation", {name:"片库分栏"}).getByRole("button", {name:/^历史/}).click();
   await button(page, "继续观看").first().click();
   await details(page).waitFor();
-  assert.equal(await page.locator("video").count(), 0, "history opens details");
+  assert.equal(await page.locator("video:visible").count(), 0, "history opens details");
   await button(details(page), "关闭详情").click();
   await page.getByRole("navigation",{name:"主导航"}).getByRole("button",{name:"设置",exact:true}).click();
   await page.getByRole("button",{name:/代理访问/}).click();
@@ -158,7 +159,8 @@ export async function testWatchExperience({ page, browser, dispatch, base, ui, r
   await button(mobile.locator(".hg-tabbar"), "分类").click();
   await mobile.locator(".legacy-row-card").first().click();
   await details(mobile).waitFor();
-  assert.equal(await mobile.locator("video").count(), 0);
+  assert.equal(await mobile.locator("video:visible").count(), 0);
+  assert(await mobile.locator(".mode-preview video").evaluate(v => v.paused));
   await button(details(mobile), "关闭详情").click();
   await mobile.locator(".hpp-category-preview").first().waitFor();
   await context.close();

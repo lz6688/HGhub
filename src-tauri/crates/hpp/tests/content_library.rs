@@ -2,6 +2,42 @@ use hghub_hpp::{library::Library, model, PluginManager};
 use serde_json::json;
 
 #[test]
+fn selected_history_removal_preserves_other_sources_and_favorites() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("library.json");
+    let library = Library::open(path.clone()).unwrap();
+    for plugin in ["a", "b"] {
+        library.operation("put", &json!({"pluginId":plugin,"item":{"id":"same","title":plugin},"favorite":true,"tracking":true})).unwrap();
+        for playlist in [None, Some("p1"), Some("p2")] {
+            let mut progress = json!({"pluginId":plugin,"mediaId":"same","episodeId":"episode","positionSec":42});
+            if let Some(id) = playlist { progress["playlistId"] = json!(id); }
+            library.operation("progress.set", &progress).unwrap();
+        }
+    }
+    library.operation("sources.link", &json!({"from":{"pluginId":"a","item":{"id":"same","title":"a"}},"to":{"pluginId":"b","item":{"id":"same","title":"b"}}})).unwrap();
+    let before = std::fs::read(&path).unwrap();
+    for items in [json!([]), json!([{"pluginId":"a","mediaId":"same"},{"pluginId":"b","mediaId":""}]), json!([{"pluginId":"a"}]), json!(vec![json!({"pluginId":"a","mediaId":"same"});501])] {
+        assert!(library.operation("history.remove", &json!({"items":items})).is_err());
+        assert_eq!(std::fs::read(&path).unwrap(), before);
+    }
+    library.operation("history.remove", &json!({"items":[{"pluginId":"a","mediaId":"same"}]})).unwrap();
+    drop(library);
+    let library = Library::open(path).unwrap();
+    for plugin in ["a", "b"] {
+        let entry = library.operation("get", &json!({"pluginId":plugin,"mediaId":"same"})).unwrap();
+        assert_eq!(entry["favorite"], true);
+        assert_eq!(entry["tracking"], true);
+        assert_eq!(entry.get("lastProgress").is_some(), plugin == "b");
+        for playlist in [None, Some("p1"), Some("p2")] {
+            let mut params = json!({"pluginId":plugin,"mediaId":"same","episodeId":"episode"});
+            if let Some(id) = playlist { params["playlistId"] = json!(id); }
+            assert_eq!(library.operation("progress.get", &params).unwrap().is_null(), plugin == "a");
+        }
+    }
+    assert_eq!(library.operation("sources.get", &json!({"pluginId":"a","mediaId":"same"})).unwrap()[0]["pluginId"], "b");
+}
+
+#[test]
 fn library_keys_progress_and_installation_lifetimes_are_independent() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("library.json");

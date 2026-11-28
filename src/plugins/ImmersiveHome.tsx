@@ -20,7 +20,21 @@ const shuffle = <T,>(items: T[]) => {
 
 export const playbackSources = (sources: InstalledPlugin[]) => sources.filter(p => p.methods.includes("media.resolvePlayback") && ["feed.list", "home.getSections", "catalog.list"].some(m => p.methods.includes(m)));
 
-export default function ImmersiveHome({ open, manage, settings, active = true }: { open: OpenMedia; manage: () => void; settings: () => void; active?: boolean }) {
+export default function ImmersiveHome(props: { open: OpenMedia; manage: () => void; settings: () => void; active?: boolean }) {
+  const { prefs, sources, ready } = useHost();
+  const [started, setStarted] = useState(false);
+  const active = props.active !== false;
+  const [visited, setVisited] = useState(active);
+  useEffect(() => { if (active) setVisited(true); }, [active]);
+  useEffect(() => { setStarted(false); }, [prefs.homeAutoPlay]);
+  const available = playbackSources(sources);
+  const hasSelection = prefs.homeMode === "all" ? available.length > 0 : available.some(p => prefs.homeIds.includes(p.meta.id));
+  if (!active && !visited) return null;
+  if (!prefs.homeAutoPlay && !started) return <div className="legacy-home bg-black flex flex-col items-center justify-center gap-4 text-white/60 text-xs"><Logo size={42}/>{!ready ? <p>正在加载…</p> : <>{hasSelection && <button className="rounded-full px-5 py-2 bg-white/10" onClick={() => setStarted(true)}>开始首页播放</button>}<button onClick={available.length ? props.settings : props.manage}>{available.length ? "选择片源" : "添加片源"}</button></>}</div>;
+  return <HomePlayback {...props}/>;
+}
+
+function HomePlayback({ open, manage, settings, active = true }: { open: OpenMedia; manage: () => void; settings: () => void; active?: boolean }) {
   const host = useHost(), request = usePluginRequests(), app = useStore();
   const available = playbackSources(host.sources);
   const chosen = host.prefs.homeMode === "all" ? available : host.prefs.homeIds.flatMap(id => available.find(p => p.meta.id === id) || []).slice(0, host.prefs.homeMode === "single" ? 1 : undefined);
@@ -112,6 +126,6 @@ export function SourcePicker({ plugins, close, manage }: { plugins: InstalledPlu
     <div className="hpp-picker-heading"><div><h2 id="source-picker-title">选择首页片源</h2><p>从选中的片源随机播放，选择会自动记住</p></div><button aria-label="关闭片源选择" onClick={close}><IClose size={20}/></button></div>
     <div className="hpp-segmented" role="group" aria-label="片源选择模式">{([["single", "单选"], ["multiple", "多选"], ["all", "全选"]] as const).map(([id, title]) => <button key={id} aria-pressed={mode === id} onClick={() => { setMode(id); if (id === "single") setIds(ids.filter(v => plugins.some(p => p.meta.id === v)).slice(0, 1)); }}>{title}</button>)}</div>
     <div className="hpp-picker-list">{plugins.map(p => <label key={p.meta.id}><span className="hpp-plugin-icon"><IGrid size={20}/></span><span><strong>{p.meta.name}</strong><small>{p.meta.description || "已启用的数据源"}</small></span><input name="home-source" type={mode === "single" ? "radio" : "checkbox"} disabled={mode === "all"} checked={mode === "all" || ids.includes(p.meta.id)} onChange={e => setIds(mode === "single" ? [p.meta.id] : e.target.checked ? [...ids, p.meta.id] : ids.filter(id => id !== p.meta.id))}/></label>)}</div>
-    {!plugins.length && <p className="hpp-muted">还没有可播放的片源。</p>}<footer><button onClick={() => { close(); manage(); }}>管理插件</button><button className="primary" disabled={mode !== "all" && !ids.some(id => plugins.some(p => p.meta.id === id))} onClick={() => { setPrefs({ homeMode: mode, homeIds: ids }); close(); }}>保存选择</button></footer>
+    {!plugins.length && <p className="hpp-muted">还没有可播放的片源。</p>}<footer><button onClick={() => { close(); manage(); }}>管理插件</button><button onClick={() => { setMode("multiple"); setIds([]); }}>清空选择</button><button className="primary" onClick={() => { setPrefs({ homeMode: mode, homeIds: ids }); close(); }}>保存选择</button></footer>
   </dialog>;
 }

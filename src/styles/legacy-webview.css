@@ -1,0 +1,95 @@
+/* Layout and visual fallbacks for older Android WebViews (Chromium 66-110).
+   Modern engines ignore these @supports not blocks and keep existing styles. */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
+
+@supports not (width: min(100%, 480px)) {
+  .plat-android, .plat-ios { --sat: 12px !important; --sab: 16px !important; }
+  .hpp-mobile-nav { padding: 5px 8px 5px; }
+  .hpp-source-dialog.hpp-page { width: 100%; max-width: 850px; }
+  .hpp-home-errors { width: calc(100% - 48px); max-width: 420px; }
+  .is-immersive .hpp-feed-meta { width: calc(100% - 36px); max-width: 360px; }
+  .hpp-source-picker { width: calc(100vw - 32px); max-width: 480px; max-height: calc(100vh - 48px); }
+  .legacy-search-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .hg-detail-sheet { width: calc(100vw - 48px); max-width: 580px; height: calc(100vh - 64px); max-height: 740px; }
+  .hg-proxy-dialog { width: calc(100vw - 32px); max-width: 460px; max-height: 85vh; }
+  @media (max-width: 600px) {
+    .hg-detail-sheet { width: 100%; max-width: none; height: 86vh; max-height: 850px; }
+    .hg-detail-sheet footer { padding: 12px 20px 20px; }
+  }
+}
+
+@supports not (padding-top: env(safe-area-inset-top)) {
+  .plat-android .hpp-header, .plat-ios .hpp-header { padding-top: 16px; }
+  .plat-ios .is-immersive .hpp-content-settings,
+  .plat-android .is-immersive .hpp-content-settings { top: 16px; }
+}
+
+@supports not (aspect-ratio: 1) {
+  [hidden] { display: none !important; }
+  .divide-y > :not(:last-child) { border-bottom-style: solid; border-bottom-width: 1px; }
+  .divide-s3 > :not(:last-child) { border-color: var(--p-s3); }
+  .aspect-\[3\/4\] { height: 0; padding-top: 133.333333%; }
+  .refined-search .legacy-search-poster > div:first-child { height: 0; padding-top: 150%; }
+  .refined-search .refined-results-detail .legacy-search-poster > div:first-child { height: 114px; padding-top: 0; }
+  @media (max-width: 600px) {
+    .refined-search .legacy-search-poster > div:first-child,
+    .refined-search .refined-results-detail .legacy-search-poster > div:first-child { height: 84px; padding-top: 0; }
+  }
+  .refined-mobile.refined-search .legacy-search-poster > div:first-child { height: 84px; padding-top: 0; }
+  .hpp-poster { display: block; height: 0; padding-top: 133.333333%; }
+  .hpp-landscape .hpp-poster { padding-top: 56.25%; }
+  .refined-page .hpp-preview-strip .hpp-poster,
+  .refined-page .hpp-local-entry .hpp-poster { padding-top: 150%; }
+  .hpp-poster > img, .hpp-poster > span { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; }
+  .hpp-poster > span { display: flex; align-items: center; justify-content: center; }
+  .hg-detail-cover { height: 139px; }
+  @media (max-width: 600px) { .hg-detail-cover { height: 128px; } }
+  .legacy-detail-summary img { height: 112px; }
+  .hpp-player-box, .legacy-inline-player { position: relative; height: 0; padding-top: 56.25%; }
+  .hpp-player-box > *, .legacy-inline-player > * { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; }
+  .is-immersive .hpp-player-box { height: 100%; padding-top: 0; }
+  .hpp-feed-stage .hpp-player-box { height: calc(100vh - 335px); padding-top: 0; }
+}
+
+@supports not (overflow: clip) {
+  .legacy-media-page .player-root { overflow: hidden; }
+}
+
+@supports not (color: color-mix(in srgb, red, blue)) {
+  .hpp-page { --surface-border: rgba(255, 255, 255, .08); }
+  html.theme-light .hpp-page { --surface-border: rgba(0, 0, 0, .08); }
+  .hg-detail-sheet { border-color: rgba(255, 255, 255, .08); }
+  html.theme-light .hg-detail-sheet { border-color: rgba(0, 0, 0, .08); }
+  .hg-episode-picker .hpp-episodes button.selected,
+  .hg-watch-window-actions button[aria-pressed=true] { background: var(--p-tint); }
+  .bg-black\/45 { background-color: rgba(0, 0, 0, .45); }
+  .bg-black\/65 { background-color: rgba(0, 0, 0, .65); }
+  .bg-black\/70 { background-color: rgba(0, 0, 0, .7); }
+  .bg-white\/10 { background-color: rgba(255, 255, 255, .1); }
+  .text-white\/60 { color: rgba(255, 255, 255, .6); }
+  .text-white\/90 { color: rgba(255, 255, 255, .9); }
+}
+
+@supports not (translate: 0) {
+  .-translate-x-1\/2 { --hg-translate-x: -50%; }
+  .-translate-y-1\/2 { --hg-translate-y: -50%; }
+  .scale-90 { transform: scale(.9); }
+  .scale-110 { transform: scale(1.1); }
+  .rotate-180 { transform: rotate(180deg); }
+  .-translate-x-1\/2, .-translate-y-1\/2 { transform: translate(var(--hg-translate-x, 0), var(--hg-translate-y, 0)); }
+  .-translate-x-1\/2.scale-110, .-translate-y-1\/2.scale-110 { transform: translate(var(--hg-translate-x, 0), var(--hg-translate-y, 0)) scale(1.1); }
+  .pressable.-translate-x-1\/2:active, .pressable.-translate-y-1\/2:active { transform: translate(var(--hg-translate-x, 0), var(--hg-translate-y, 0)) scale(.94); }
+}
+
+/* Flexbox gap is absent before Chromium 84. */
+html[data-legacy-flex-gap] .hpp-provider-tabs > button + button { margin-left: 8px; }
+html[data-legacy-flex-gap] .hpp-preview-strip > * + * { margin-left: 10px; }
+html[data-legacy-flex-gap] .hg-preview-actions > * + * { margin-top: 20px; }
+html[data-legacy-flex-gap] .hg-watch-heading > * + * { margin-left: 10px; }
+html[data-legacy-flex-gap] .hg-detail-hero > * + * { margin-left: 16px; }
+html[data-legacy-flex-gap] .hg-detail-tags > * { margin-right: 6px; margin-bottom: 6px; }
+html[data-legacy-flex-gap] .browse-filters fieldset > label,
+html[data-legacy-flex-gap] .browse-filters fieldset > button { margin-right: 6px; margin-bottom: 6px; }
+html[data-legacy-flex-gap] .hpp-source-picker footer > * + *,
+html[data-legacy-flex-gap] .hg-proxy-dialog footer > * + * { margin-left: 12px; }

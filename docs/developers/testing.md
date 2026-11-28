@@ -20,6 +20,8 @@
 
 ## 仓库验证
 
+启动与片库偏好专项：先运行 `cargo build --manifest-path src-tauri/crates/hpp/Cargo.toml --example dev_host`，再运行 `node scripts/test-plugins.mjs --preferences`。检查启动页面持久化、非首页启动不请求首页媒体、关闭自动播放后的手动启动、空首页来源、分类列数与宽度上限，以及勾选删除历史。`cargo test --manifest-path src-tauri/crates/hpp/Cargo.toml --test content_library` 检查删除整批校验、落盘恢复、跨来源隔离和收藏保留。若设置了 `CARGO_TARGET_DIR`，构建与浏览器测试应使用同一值。
+
 目录导入专项：`cargo test --manifest-path src-tauri/crates/hpp/Cargo.toml --test distribution --test automatic_updates` 覆盖不透明 URI 适配、只读取勾选条目、身份不符、错误隔离、预览取消及更新回归。运行 `node scripts/sync-android-network.mjs` 后，在 `src-tauri/gen/android` 执行 `./gradlew.bat :app:testX86_64DebugUnitTest -x :app:rustBuildX86_64Debug` 验证 Android 中文/编码/子目录路径及越界拒绝。设备另验系统授权、取消选择、不同文件提供者、重启后重新授权和保留数据安装。
 
 日志/卸载专项：`cargo test --manifest-path src-tauri/crates/hpp/Cargo.toml --lib native::logs` 检查 240 行/分钟、2000 行保留、单行含 details 的 2 KiB 限制与丢弃计数；`cargo test --manifest-path src-tauri/crates/hpp/Cargo.toml --test log_limits` 检查插件日志、校验告警和业务错误共用限额。`cargo test --manifest-path src-tauri/crates/hpp/Cargo.toml --lib runtime::lifecycle_tests` 检查正常卸载通知、禁止 I/O、抛错/死循环/挂起 Promise 的停用耗时，以及中断运行时跳过通知。

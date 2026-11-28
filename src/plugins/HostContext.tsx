@@ -6,15 +6,15 @@ import { emptyUpdateState, pendingUpdates, tickPluginUpdates, type UpdateState }
 
 export interface LocalProgress { pluginId: string; mediaId: string; playlistId?: string; episodeId: string; positionSec: number; durationSec?: number; at: number }
 export interface LibraryEntry { pluginId: string; mediaId: string; item: MediaItem; favorite: boolean; tracking: boolean; updatedAt: number; lastProgress?: LocalProgress; latestLabel?: string }
-export interface Preferences { homeMode: "all" | "single" | "multiple"; homeIds: string[]; order: string[]; hiddenHomeIds: string[]; hiddenSections: string[]; sectionOrder: Record<string, string[]>; searchMode: "all" | "single" | "multiple"; searchIds: string[]; mature: boolean; playbackFallback: boolean; autoNext: boolean }
-const defaults: Preferences = { homeMode: "all", homeIds: [], order: [], hiddenHomeIds: [], hiddenSections: [], sectionOrder: {}, searchMode: "all", searchIds: [], mature: false, playbackFallback: true, autoNext: true };
+export interface Preferences { homeMode: "all" | "single" | "multiple"; homeIds: string[]; order: string[]; hiddenHomeIds: string[]; hiddenSections: string[]; sectionOrder: Record<string, string[]>; searchMode: "all" | "single" | "multiple"; searchIds: string[]; mature: boolean; playbackFallback: boolean; autoNext: boolean; homeAutoPlay: boolean }
+const defaults: Preferences = { homeMode: "all", homeIds: [], order: [], hiddenHomeIds: [], hiddenSections: [], sectionOrder: {}, searchMode: "all", searchIds: [], mature: false, playbackFallback: true, autoNext: true, homeAutoPlay: true };
 function readPreferences(): Preferences {
   try {
     const raw = JSON.parse(localStorage.getItem("hpp.preferences") || "{}"), p = { ...defaults };
     for (const key of ["homeMode", "searchMode"] as const) if (["all", "single", "multiple"].includes(raw[key])) p[key] = raw[key];
     for (const key of ["homeIds", "searchIds", "order", "hiddenHomeIds", "hiddenSections"] as const) if (Array.isArray(raw[key])) p[key] = [...new Set<string>(raw[key].filter((v: unknown) => typeof v === "string"))];
     if (raw.sectionOrder && typeof raw.sectionOrder === "object" && !Array.isArray(raw.sectionOrder)) p.sectionOrder = Object.fromEntries(Object.entries(raw.sectionOrder).filter(([,v]) => Array.isArray(v)).map(([id,v]) => [id, [...new Set((v as unknown[]).filter((id): id is string => typeof id === "string"))]]));
-    p.mature = raw.mature === true; p.playbackFallback = raw.playbackFallback !== false; p.autoNext = raw.autoNext !== false; return p;
+    p.mature = raw.mature === true; p.playbackFallback = raw.playbackFallback !== false; p.autoNext = raw.autoNext !== false; p.homeAutoPlay = raw.homeAutoPlay !== false; return p;
   } catch { return defaults; }
 }
 const Ctx = createContext<{

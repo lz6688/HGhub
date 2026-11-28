@@ -1,3 +1,4 @@
+import "../src/legacyRuntime";
 import "../src/index.css";
 import { createRoot } from "react-dom/client";
 import { StrictMode } from "react";
@@ -9,7 +10,7 @@ import { AppProvider } from "../src/store";
 // validation, media sessions and the React page remain the production code.
 const openedUrls: string[] = [];
 const windowCommands: string[] = [];
-Object.assign(window, { __HPP_TEST_WINDOW_COMMANDS__: windowCommands });
+Object.assign(window, { isTauri: true, __HPP_TEST_WINDOW_COMMANDS__: windowCommands });
 Object.assign(window, { __TAURI_EVENT_PLUGIN_INTERNALS__: { unregisterListener() {} }, __HPP_TEST_OPENED_URLS__: openedUrls, __TAURI_INTERNALS__: { async invoke(cmd: string, args: unknown) {
   if (cmd === "pick_plugin_files") return (window as unknown as { __HPP_TEST_FILE_PATHS__?: string[] }).__HPP_TEST_FILE_PATHS__ || [];
   if (cmd === "open_url") { openedUrls.push((args as { url: string }).url); return; }

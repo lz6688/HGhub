@@ -4,6 +4,8 @@ mod logging;
 mod macos_titlebar;
 mod network_policy;
 mod plugins;
+#[cfg(desktop)]
+mod window_state;
 #[cfg(target_os = "windows")]
 mod windows_login;
 #[cfg(target_os = "android")]
@@ -60,7 +62,15 @@ pub fn run() {
             // plugin command; eager initialization would expose an incorrect env.
             #[cfg(target_os = "macos")]
             macos_titlebar::create_main_window(app)?;
+            #[cfg(desktop)]
+            window_state::restore(app)?;
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            #[cfg(desktop)]
+            window_state::on_event(window, event);
+            #[cfg(mobile)]
+            let _ = (window, event);
         })
         .invoke_handler(tauri::generate_handler![
             plugins::hpp_manage,
@@ -73,6 +83,12 @@ pub fn run() {
             commands::open_url,
             commands::open_external_media
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running HGhub");
+        .build(tauri::generate_context!())
+        .expect("error while building HGhub")
+        .run(|app, event| {
+            #[cfg(desktop)]
+            if matches!(event, tauri::RunEvent::ExitRequested { .. }) { window_state::save(app); }
+            #[cfg(mobile)]
+            let _ = (app, event);
+        });
 }

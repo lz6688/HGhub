@@ -6,7 +6,7 @@ import { Toggle } from "../components/ui";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { checkAppUpdate, type AppRelease } from "../appUpdates";
-import { useStore } from "../store";
+import { useStore, type Tab } from "../store";
 import { APP_VERSION, isMobile } from "../environment";
 import { useHost } from "./HostContext";
 import { BrowseFrame, Notice } from "./BrowsePages";
@@ -39,8 +39,12 @@ export default function ApplicationSettings({ onBack }: { onBack: () => void }) 
       </div>
     </div>
     <div className="flex-1 min-h-0 scroll-y px-4 pt-1 pb-10"><div className="refined-settings-grid"><Notice error={error||app.error}/><div className="refined-settings-column">
-      <Section title="外观"><Setting icon={app.theme==="dark"?<IMoon size={16}/>:<ISun size={16}/>} title="深色外观" description="切换应用的深色与浅色外观"><Toggle label="深色外观" on={app.theme==="dark"} onChange={on=>app.setTheme(on?"dark":"light")}/></Setting></Section>
+      <Section title="外观"><Setting icon={app.theme==="dark"?<IMoon size={16}/>:<ISun size={16}/>} title="深色外观" description="切换应用的深色与浅色外观"><Toggle label="深色外观" on={app.theme==="dark"} onChange={on=>app.setTheme(on?"dark":"light")}/></Setting>
+        <Setting icon={<IGrid size={16}/>} title="每行卡片数"><select className="settings-select" aria-label="每行卡片数" value={app.cardColumns} onChange={e=>app.setCardColumns(Number(e.target.value))}><option value={0}>自动</option>{[4,5,6,7,8].map(n=><option value={n} key={n}>{n}</option>)}</select></Setting>
+        <Setting icon={<IGrid size={16}/>} title="启动后打开"><select className="settings-select" aria-label="启动后打开" value={app.startPage} onChange={e=>app.setStartPage(e.target.value as Tab)}><option value="home">首页</option><option value="search">搜索</option><option value="category">分类</option><option value="profile">我的</option></select></Setting>
+      </Section>
       <Section title="播放">
+        <Setting icon={<IPlayF size={16}/>} title="首页自动播放"><Toggle label="首页自动播放" on={host.prefs.homeAutoPlay} onChange={homeAutoPlay=>host.setPrefs({homeAutoPlay})}/></Setting>
         <button className="w-full text-left" onClick={()=>setPicker(true)} aria-haspopup="dialog"><Setting icon={<IGrid size={16}/>} title="首页播放片源" description={host.prefs.homeMode==="all"?`全部片源 · ${available.length} 个`:host.prefs.homeMode==="single"?selected[0]?.meta.name||"尚未选择片源":`已选择 ${selected.length} 个片源`}><IChevR size={15}/></Setting></button>
         <Setting icon={<IVolMute size={16}/>} title="启动时静音" description="每次启动默认静音，下次启动生效"><Toggle label="启动时静音" on={app.muteOnStartup} onChange={app.setMuteOnStartup}/></Setting>
         <Setting icon={<IPlayF size={16}/>} title="自动播放下一条" description="播完后继续下一集或下一部作品"><Toggle label="自动播放下一条" on={host.prefs.autoNext} onChange={autoNext=>host.setPrefs({autoNext})}/></Setting>
@@ -110,4 +114,4 @@ function AppUpdateSetting() {
 
 // Reused Settings row/section structure from 5f88442.
 function Section({title,children}:{title:string;children:ReactNode}) {return <div className="refined-settings-group"><h2 className="text-[10.5px] font-semibold text-dim tracking-wide px-1 mt-4 mb-1.5">{title}</h2><section className="rounded-(--r-md) bg-s2 divide-y divide-s3">{children}</section></div>;}
-function Setting({icon,title,description,children}:{icon:ReactNode;title:string;description:ReactNode;children?:ReactNode}) {return <div className="flex items-center gap-3 px-3.5 py-3"><span className="shrink-0 w-8 h-8 rounded-full bg-s3 flex items-center justify-center text-primary">{icon}</span><div className="flex-1 min-w-0"><div className="text-[12.5px] text-on">{title}</div><div className="text-[10.5px] text-mut">{description}</div></div><div className="shrink-0 flex">{children}</div></div>;}
+function Setting({icon,title,description,children}:{icon:ReactNode;title:string;description?:ReactNode;children?:ReactNode}) {return <div className="flex items-center gap-3 px-3.5 py-3"><span className="shrink-0 w-8 h-8 rounded-full bg-s3 flex items-center justify-center text-primary">{icon}</span><div className="flex-1 min-w-0"><div className="text-[12.5px] text-on">{title}</div>{description&&<div className="text-[10.5px] text-mut">{description}</div>}</div><div className="shrink-0 flex">{children}</div></div>;}

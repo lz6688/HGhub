@@ -18,6 +18,7 @@ import { testPluginBrowsing } from "./test-plugin-browsing.mjs";
 import { testResolverPreferences } from "./test-plugin-resolver-preferences.mjs";
 import { testWatchExperience } from "./test-watch-experience.mjs";
 import { testFrontend } from "./test-frontend.mjs";
+import { testPreferences } from "./test-preferences.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const output = join(root, "test-results", "plugins", new Date().toISOString().replace(/[:.]/g, "-"));
@@ -29,7 +30,7 @@ try {
   const pending = new Map(); let serial = 0;
   let readyResolve, readyReject;
   const ready = new Promise((resolve, reject) => { readyResolve = resolve; readyReject = reject; });
-  host = spawn(join(root, "src-tauri/crates/hpp/target/debug/examples", process.platform === "win32" ? "dev_host.exe" : "dev_host"), [data, "--relaxed"], { cwd: root, windowsHide: true, stdio: ["pipe", "pipe", "pipe"] });
+  host = spawn(join(process.env.CARGO_TARGET_DIR || join(root, "src-tauri/crates/hpp/target"), "debug/examples", process.platform === "win32" ? "dev_host.exe" : "dev_host"), [data, "--relaxed"], { cwd: root, windowsHide: true, stdio: ["pipe", "pipe", "pipe"] });
   host.on("error", readyReject); host.stderr.on("data", chunk => process.stderr.write(chunk));
   createInterface({ input: host.stdout }).on("line", line => {
     const message = JSON.parse(line);
@@ -90,7 +91,9 @@ try {
   await page.route("**/*", route => { const url = route.request().url(); if (url.includes("/__hpp_test_ipc") || new URL(url).hostname === "127.0.0.1") return route.fallback(); report.external.push(url); return route.abort(); });
   if (!process.argv.includes("--frontend") && !process.argv.includes("--experience")) await page.addInitScript(() => { if (!localStorage.getItem("hpp.preferences")) localStorage.setItem("hpp.preferences", JSON.stringify({ homeMode: "multiple", homeIds: [], autoNext: false })); });
   await page.goto(`${ui}tests/plugins.html`);
-  if (process.argv.includes("--experience")) {
+  if (process.argv.includes("--preferences")) {
+    await testPreferences({ page, browser, dispatch, base, ui, output, report });
+  } else if (process.argv.includes("--experience")) {
     await testWatchExperience({ page, browser, dispatch, base, ui, root, output, report });
   } else if (process.argv.includes("--frontend")) {
     await testFrontend({ page, browser, dispatch, base, ui, root, output, report });

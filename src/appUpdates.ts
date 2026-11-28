@@ -3,17 +3,25 @@ const RELEASE_PREFIX = "https://github.com/Minireel/HGhub/releases/tag/";
 
 export type AppRelease = { tag: string; url: string; available: boolean };
 
+function compareNumeric(left: string, right: string): number {
+  if (left.length !== right.length) return left.length > right.length ? 1 : -1;
+  return left === right ? 0 : left > right ? 1 : -1;
+}
+
 function versionParts(value: string) {
   const match = /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*))?(?:\+[\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*)?$/.exec(value);
   const prerelease = match?.[4]?.split(".") ?? [];
   if (!match || prerelease.some(part => /^0\d+$/.test(part))) throw new Error("无法识别版本号，请稍后重试");
-  return { core: match.slice(1, 4).map(BigInt), prerelease };
+  return { core: match.slice(1, 4), prerelease };
 }
 
 // SemVer precedence: numeric components, then prerelease identifiers; ignore build metadata.
 export function compareVersions(left: string, right: string): number {
   const a = versionParts(left), b = versionParts(right);
-  for (let i = 0; i < 3; i++) if (a.core[i] !== b.core[i]) return a.core[i] > b.core[i] ? 1 : -1;
+  for (let i = 0; i < 3; i++) {
+    const diff = compareNumeric(a.core[i], b.core[i]);
+    if (diff !== 0) return diff;
+  }
   if (!a.prerelease.length || !b.prerelease.length) return Number(!a.prerelease.length) - Number(!b.prerelease.length);
   for (let i = 0; i < Math.max(a.prerelease.length, b.prerelease.length); i++) {
     const x = a.prerelease[i], y = b.prerelease[i];
@@ -21,7 +29,7 @@ export function compareVersions(left: string, right: string): number {
     if (y === undefined) return 1;
     if (x === y) continue;
     const nx = /^\d+$/.test(x), ny = /^\d+$/.test(y);
-    if (nx && ny) return BigInt(x) > BigInt(y) ? 1 : -1;
+    if (nx && ny) return compareNumeric(x, y);
     if (nx !== ny) return nx ? -1 : 1;
     return x > y ? 1 : -1;
   }
